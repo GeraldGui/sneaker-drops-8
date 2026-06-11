@@ -54,6 +54,7 @@ public class StartupRunner implements CommandLineRunner {
             System.out.println("7) Add sneaker");
             System.out.println("8) Update sneaker");
             System.out.println("9) Delete sneaker");
+            System.out.println("10) Search by brand");
             System.out.println("0) Quit");
             System.out.print("Your Choice: ");
 
@@ -67,6 +68,7 @@ public class StartupRunner implements CommandLineRunner {
                 case 7 -> addSneaker(scanner);
                 case 8 -> updateSneakerPrice(scanner);
                 case 9 -> deleteSneaker(scanner);
+                case 10 -> searchByBrand(scanner);
                 case 0 -> running = false;
                 default -> System.out.println("Wrong Input!");
             }
@@ -77,11 +79,11 @@ public class StartupRunner implements CommandLineRunner {
     private void listSneakers() {
         System.out.println("You have " + sneakerRepository.count() + " sneakers:");
         for (Sneaker sneaker : sneakerRepository.findAll()) {
-            System.out.printf("%d - %s ($%.2f %d)%n", sneaker.getId(), sneaker.getModel(), sneaker.getPrice(), sneaker.getReleaseYear());
+            System.out.printf("%d - %s ($%.2f %d) %s%n", sneaker.getId(), sneaker.getModel(), sneaker.getPrice(), sneaker.getReleaseYear(), sneaker.getBrand().getName());
         }
     }
 
-    private void findByModel(Scanner scanner){
+    private void findByModel(Scanner scanner) {
         scanner.nextLine();
         System.out.print("Model: ");
         String model = scanner.nextLine();
@@ -91,7 +93,7 @@ public class StartupRunner implements CommandLineRunner {
         }
     }
 
-    private void findByPrice(Scanner scanner){
+    private void findByPrice(Scanner scanner) {
         System.out.print("Price: ");
         double price = scanner.nextDouble();
 
@@ -100,7 +102,7 @@ public class StartupRunner implements CommandLineRunner {
         }
     }
 
-    private void findByYear(Scanner scanner){
+    private void findByYear(Scanner scanner) {
         System.out.print("Year: ");
         int year = scanner.nextInt();
 
@@ -109,7 +111,7 @@ public class StartupRunner implements CommandLineRunner {
         }
     }
 
-    private void findBySearch(Scanner scanner){
+    private void findBySearch(Scanner scanner) {
         System.out.print("Enter your max price range: ");
         double price = scanner.nextDouble();
 
@@ -123,7 +125,7 @@ public class StartupRunner implements CommandLineRunner {
 
     }
 
-    private void viewById(Scanner scanner){
+    private void viewById(Scanner scanner) {
         System.out.print("Sneaker id: ");
         long id = scanner.nextLong();
 
@@ -136,6 +138,12 @@ public class StartupRunner implements CommandLineRunner {
         }
     }
 
+    private void listBrand() {
+        for (Brand brand : brandRepository.findAll()) {
+            System.out.println(brand.getId() + " - " + brand.getName());
+        }
+    }
+
     private void addSneaker(Scanner scanner) {
         scanner.nextLine();
         System.out.print("Model: ");
@@ -145,7 +153,13 @@ public class StartupRunner implements CommandLineRunner {
         System.out.print("Year: ");
         int year = scanner.nextInt();
 
-        sneakerRepository.save(new Sneaker(model, price, year));
+        System.out.println("Choose a brand: ");
+        listBrand();
+        long brandId = scanner.nextLong();
+
+        Brand brand = brandRepository.findById(brandId).orElseThrow(() -> new RuntimeException("No game with id " + brandId));
+
+        sneakerRepository.save(new Sneaker(model, price, year, brand));
         System.out.println("Added Sneaker!");
     }
 
@@ -171,21 +185,32 @@ public class StartupRunner implements CommandLineRunner {
         }
     }
 
+    private void searchByBrand(Scanner scanner) {
+        scanner.nextLine();
+        System.out.print("Brand: ");
+        String brand = scanner.nextLine();
+
+        for (Sneaker sneaker : sneakerRepository.findByBrandNameContainingIgnoreCase(brand)) {
+            System.out.println(sneaker.getModel());
+        }
+    }
+
     private void seedData() {
-        if(brandRepository.count() == 0) {
-            brandRepository.save(new Brand("Nike"));
-            brandRepository.save(new Brand("Jordan"));
-            brandRepository.save(new Brand("Adidas"));
-            brandRepository.save(new Brand("New Balance"));
-            brandRepository.save(new Brand("Puma"));
+        if (sneakerRepository.count() > 0) {
+            return;
         }
 
-        if (sneakerRepository.count() == 0) {
-            sneakerRepository.save(new Sneaker("Air Force 1'07", 115.00, 1982));
-            sneakerRepository.save(new Sneaker("Air Jordan 13", 150.00, 1997));
-            sneakerRepository.save(new Sneaker("Samba OG", 100.00, 1950));
-            sneakerRepository.save(new Sneaker("574 Core", 100.00, 1988));
-            sneakerRepository.save(new Sneaker("Suede Classic", 75.00, 1968));
-        }
+        Brand nike = brandRepository.save(new Brand("Nike"));
+        Brand jordan = brandRepository.save(new Brand("Jordan"));
+        Brand adidas = brandRepository.save(new Brand("Adidas"));
+        Brand newBalance = brandRepository.save(new Brand("New Balance"));
+        Brand puma = brandRepository.save(new Brand("Puma"));
+
+
+        sneakerRepository.save(new Sneaker("Air Force 1'07", 115.00, 1982, nike));
+        sneakerRepository.save(new Sneaker("Air Jordan 13", 150.00, 1997, jordan));
+        sneakerRepository.save(new Sneaker("Samba OG", 100.00, 1950, adidas));
+        sneakerRepository.save(new Sneaker("574 Core", 100.00, 1988, newBalance));
+        sneakerRepository.save(new Sneaker("Suede Classic", 75.00, 1968, puma));
     }
 }
